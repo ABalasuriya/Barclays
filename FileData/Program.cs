@@ -9,10 +9,21 @@ namespace FileData
     {
         public static void Main(string[] args)
         {
-            var fileProcessor = new FileDataProcessor(args, new FileDetails());
-            var str = fileProcessor.GetFileData();
-            Console.WriteLine(str);
-            Console.ReadLine();
+            try
+            {
+                var fileProcessor = new FileDataProcessor(args, new FileDetails());
+                var str = fileProcessor.GetFileData();
+                Console.WriteLine(str);
+                Console.ReadLine();
+            }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+
+            }
+          
 
         }
     }

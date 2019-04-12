@@ -17,6 +17,7 @@
 # Visual Studio output folders
 [Oo]bj/
 [Bb]in/
+
 # Code analysis files
 *.CodeAnalysisLog.xml
 *.lastcodeanalysissucceeded
