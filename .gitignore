@@ -1,0 +1,22 @@
+# Visual Studio temporary settings
+# *.suo
+# *.user
+
+# Shared output folder
+/[Bb]uild/
+
+# Deployed websites
+/[Ww]ebsites/
+
+# log files
+*.log
+
+# Nuget packages
+# /packages
+
+# Visual Studio output folders
+[Oo]bj/
+[Bb]in/
+# Code analysis files
+*.CodeAnalysisLog.xml
+*.lastcodeanalysissucceeded
