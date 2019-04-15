@@ -372,12 +372,13 @@ namespace FileData.test
 
             // Act 
             // Manually raise even.
-            mockIAuthUser.Raise(x => x.AuthorisedAllFileData += null, true);
+            mockIAuthUser.Raise(x => x.AuthorisedAllFileData +=  null, this, true);
 
             // Assert
             Assert.That(sut.CanGetFileSizeData, Is.True);
 
         }
+
     }
 
 

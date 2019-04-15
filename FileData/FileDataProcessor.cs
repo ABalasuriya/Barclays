@@ -98,8 +98,8 @@ namespace FileData
                 //{
                 //    this.CanGetFileSizeData = e ? true : false;
                 //};
-
-                (FileDetailsTool as IAuthUser).AuthorisedAllFileData += FileDataProcessor_AuthorisedAllFileData;
+                if (FileDetailsTool != null)
+                    (FileDetailsTool as IAuthUser).AuthorisedAllFileData += FileDataProcessor_AuthorisedAllFileData;
 
             }
             catch (NullReferenceException)
