@@ -44,7 +44,11 @@
   <ItemGroup>
     <Compile Include="FileDates.cs" />
     <Compile Include="FileDetails.cs" />
+    <Compile Include="IAuthUser.cs" />
+    <Compile Include="IFileDetails.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserAddress.cs" />
+    <Compile Include="UserDetail.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

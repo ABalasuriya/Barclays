@@ -1,4 +1,5 @@
 ﻿using System;
+using Moq;
 using NUnit.Framework;
 using ThirdPartyTools;
 
@@ -16,13 +17,13 @@ namespace FileData.test
             string[] args = { "-v", "c:/test.txt" };
 
             // Act 
-            var fileProcessor = new FileDataProcessor( args, null );
+            var fileProcessor = new FileDataProcessor(args, null);
 
             // Assert 
             Assert.That(fileProcessor.Args[0], Is.EqualTo("-v"));
             Assert.That(fileProcessor.Args[1], Is.EqualTo("c:/test.txt"));
             Assert.That(fileProcessor.Args.Length, Is.EqualTo(2));
-                                     
+
         }
 
         [Test]
@@ -68,7 +69,7 @@ namespace FileData.test
             // Act 
             // Assert
             Assert.That(() => new FileDataProcessor(args), Throws.TypeOf<ArgumentNullException>()
-                .With.Matches< ArgumentNullException>(
+                .With.Matches<ArgumentNullException>(
                     ex => ex.ParamName == "CommandArguement" &&
                             ex.Message.Contains(FileDataConstants.commandEmptyErrorMessage)
                 ));
@@ -118,7 +119,7 @@ namespace FileData.test
         {
             // Arrange
             string[] args = { command, fileLocation };
-            
+
             // create SUT
             var sut = new FileDataProcessor(args, new FileDetails());
 
@@ -168,6 +169,216 @@ namespace FileData.test
             Assert.That(() => sut.GetFileData(), Throws.TypeOf<NullReferenceException>());
 
         }
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:/test.txt")]
+        public void Should_get_version_number_of_the_file(string command,
+           string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+            var mockFileDetaidls = new Mock<IFileDetails> { DefaultValue = DefaultValue.Mock };
+            var mockIAuthUser = mockFileDetaidls.As<IAuthUser>();
 
+            mockFileDetaidls.Setup(x => x.Version(It.IsAny<string>()))
+                .Returns("1.20.87");
+
+            // create SUT
+            var sut = new FileDataProcessor(args, mockFileDetaidls.Object);
+
+            // Act 
+            string result = sut.GetFileData();
+
+            // Assert
+            Assert.That(result, Is.EqualTo("File Version number: 1.20.87"));
+
+        }
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-s", "c:/test.txt")]
+        public void Should_get_file_size_of_the_file(string command,
+           string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+            var mockFileDetaidls = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetaidls.As<IAuthUser>();
+
+            mockFileDetaidls.SetupAllProperties();
+
+            mockFileDetaidls.Setup(x => x.Size(fileLocation))
+                .Returns(285);
+
+            // create SUT
+            var sut = new FileDataProcessor(args, mockFileDetaidls.Object);
+
+            // Act 
+            string result = sut.GetFileData();
+
+            // Assert
+            Assert.That(result, Is.EqualTo("File size: 285"));
+
+        }
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:\test.txt")]
+        public void Should_return_filepath_with_version_when_authorised(string command,
+           string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetaidls = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetaidls.As<IAuthUser>();
+
+            mockFileDetaidls.SetupAllProperties();
+            // Setting up a mock property to return a specific value.
+            mockIAuthUser.Setup(x => x.IsAuthorised)
+               .Returns(true);
+
+            mockFileDetaidls.Setup(x => x.Version(It.IsAny<string>()))
+                .Returns("1.20.87");
+
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetaidls.Object
+            );
+
+            // Act 
+            string result = sut.GetFileData();
+
+            // Assert
+            Assert.That(result, Is.EqualTo("File Version number: 1.20.87, FilePath for authorised users : c:\test.txt"));
+
+        }
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:\test.txt")]
+        public void Should_verify_version_called_with_fileLcation_parameter_and_IsAuthorised_getter(string command,
+           string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetaidls = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetaidls.As<IAuthUser>();
+
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetaidls.Object
+            );
+
+            // Act 
+            string result = sut.GetFileData();
+
+            // Assert
+            mockFileDetaidls.Verify(x => x.Version(fileLocation));
+            mockIAuthUser.VerifyGet(x => x.IsAuthorised);
+            mockFileDetaidls.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-s", "c:\test.txt")]
+        public void Should_verify_size_called_with_fileLcation_parameter_and_IsAuthorised_getter(string command,
+           string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetaidls = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetaidls.As<IAuthUser>();
+
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetaidls.Object
+            );
+
+            // Act 
+            string result = sut.GetFileData();
+
+            // Assert
+            mockFileDetaidls.Verify(x => x.Size(fileLocation));
+            mockIAuthUser.VerifyGet(x => x.IsAuthorised);
+            mockFileDetaidls.VerifyNoOtherCalls();
+
+        }
+
+        // The following characters are invalid in a path:
+        // Char    Hex Value
+        // ",      0022
+        // <,      003C
+        // >,      003E
+        // |,      007C
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:\te<st.txt")]
+        public void Should_throw_argumentException_when_version_called(string command,
+         string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetails = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetails.As<IAuthUser>();
+
+            mockFileDetails.Setup(f => f.Version(fileLocation))
+                .Throws<ArgumentException>();
+
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetails.Object
+            );
+
+            // Act 
+            // Assert
+            Assert.That(() => sut.GetFileData(), Throws.TypeOf<ArgumentException>()
+                 .With.Matches<ArgumentException>(
+                     nOpx => nOpx.Message == "Value does not fall within the expected range."
+                 ));
+
+            Assert.That(sut.HasError, Is.True);
+
+        }
+
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:\test.txt")]
+        public void Should_call_event_AuthorisedAllFileData_and_set_CanGetFileSizeData_flag(string command,
+         string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetails = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetails.As<IAuthUser>();
+
+            mockIAuthUser.Setup(f => f.IsAuthorised)
+                .Returns(true);
+
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetails.Object
+            );
+
+            // Act 
+            // Manually raise even.
+            mockIAuthUser.Raise(x => x.AuthorisedAllFileData += null, true);
+
+            // Assert
+            Assert.That(sut.CanGetFileSizeData, Is.True);
+
+        }
     }
+
+
 }

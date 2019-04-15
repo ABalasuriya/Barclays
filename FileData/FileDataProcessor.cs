@@ -11,7 +11,7 @@ namespace FileData
 
         private readonly IList<string> AllVersionArguements = new List<string>() { @"-v", @"--v", @"/v", @"--version" };
         private readonly IList<string> AllSizeguements = new List<string>() { @"-s", @"--s", @"/s", @"--size" };
-
+        
         #endregion
 
         #region public properties
@@ -20,34 +20,50 @@ namespace FileData
         public string CommandArguement { get;}
 
         public string FileLocation { get; }
-        protected FileDetails FileDetialsTool { get; }
+        protected IFileDetails FileDetailsTool { get; }
+        public bool HasError { get; private set; }
+
+        public bool CanGetFileSizeData { get; private set; }
 
         #endregion
 
         #region methods 
         public string GetFileData()
         {
+            this.HasError = false;
             try
             {
-
-                if (AllVersionArguements.FirstOrDefault(x => x.Equals(CommandArguement)) != null)
+                if (!(FileDetailsTool as IAuthUser).IsAuthorised)
                 {
-                    return $"File Version number: {FileDetialsTool.Version(this.FileLocation)}";
-                }
-                else if (AllSizeguements.Contains(CommandArguement))
-                {
-                    return $"File size: {FileDetialsTool.Size(this.FileLocation).ToString()}";
+                    return GetFileDataThirdPartuAPI();
                 }
                 else
-                    throw new InvalidOperationException("Command not valid!");
+                {
+                    return $"{GetFileDataThirdPartuAPI()}, FilePath for authorised users : {this.FileLocation}";
+                } 
+
             }
             catch (Exception)
             {
                 // Could log the error.
-
+                this.HasError = true;
                 throw;
             }
             
+        }
+
+        private string GetFileDataThirdPartuAPI()
+        {
+            if (AllVersionArguements.FirstOrDefault(x => x.Equals(CommandArguement)) != null)
+            {
+                return $"File Version number: {FileDetailsTool.Version(this.FileLocation)}";
+            }
+            else if (AllSizeguements.Contains(CommandArguement))
+            {
+                return $"File size: {FileDetailsTool.Size(this.FileLocation).ToString()}";
+            }
+            else
+                throw new InvalidOperationException("Command not valid!");
         }
 
         #endregion
@@ -58,11 +74,12 @@ namespace FileData
         { }
 
 
-        public FileDataProcessor(string[] args, FileDetails fileDetails = default)
+        public FileDataProcessor(string[] args, IFileDetails fileDetails = default)
         {
             try
             {
                 // check for empty values in array args.
+
                 if (string.IsNullOrEmpty(args[0]))
                 {
                     throw new ArgumentNullException(nameof(CommandArguement), FileDataConstants.commandEmptyErrorMessage);
@@ -75,7 +92,14 @@ namespace FileData
                 Args = args;
                 CommandArguement = Args[0];
                 FileLocation = Args[1];
-                FileDetialsTool = fileDetails;
+                FileDetailsTool = fileDetails;
+
+                //(FileDetailsTool as IAuthUser).AuthorisedAllFileData += (sender, e) =>
+                //{
+                //    this.CanGetFileSizeData = e ? true : false;
+                //};
+
+                (FileDetailsTool as IAuthUser).AuthorisedAllFileData += FileDataProcessor_AuthorisedAllFileData;
 
             }
             catch (NullReferenceException)
@@ -92,6 +116,12 @@ namespace FileData
             }
             
         }
+
+        private void FileDataProcessor_AuthorisedAllFileData(object sender, bool e)
+        {
+            this.CanGetFileSizeData = (e ? true : false);
+        }
+
         #endregion
 
     }
