@@ -361,15 +361,12 @@ namespace FileData.test
             var mockFileDetails = new Mock<IFileDetails>();
             var mockIAuthUser = mockFileDetails.As<IAuthUser>();
 
-            mockIAuthUser.Setup(f => f.IsAuthorised)
-                .Returns(true);
-
             // create SUT
             var sut = new FileDataProcessor(
                 args,
                 mockFileDetails.Object
             );
-
+            
             // Act 
             // Manually raise even.
             mockIAuthUser.Raise(x => x.AuthorisedAllFileData +=  null, this, true);
@@ -377,7 +374,37 @@ namespace FileData.test
             // Assert
             Assert.That(sut.CanGetFileSizeData, Is.True);
 
+
         }
+        [Test]
+        [Category("Use third party library")]
+        [TestCase("-v", "c:\test.txt")]
+        public void Should_return_determinstic_result_for_version(string command,
+        string fileLocation)
+        {
+            // Arrange
+            string[] args = { command, fileLocation };
+
+            var mockFileDetails = new Mock<IFileDetails>();
+            var mockIAuthUser = mockFileDetails.As<IAuthUser>();
+
+            mockFileDetails.Setup(x => x.Version(It.IsAny<string>()))
+                .Returns("10.10.10");
+            // create SUT
+            var sut = new FileDataProcessor(
+                args,
+                mockFileDetails.Object
+            );
+
+            // Act
+            string result = sut.GetFileData();
+
+            // Assert
+            Assert.That(result, Is.EqualTo("File Version number: 10.10.10"));
+
+
+        }
+
 
     }
 

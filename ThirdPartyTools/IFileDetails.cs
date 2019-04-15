@@ -5,5 +5,7 @@
         int Size(string filePath);
         string Version(string filePath);
 
+        int GetRandom(int value);
+
     }
 }
